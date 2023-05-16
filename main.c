@@ -1,5 +1,5 @@
 #if 0
-	./run.sh
+	./run.sh ${@}
 	exit $?
 #endif
 
@@ -42,7 +42,7 @@ char *WARNING_NOTE_TYPE;
 char *NOTE_NOTE_TYPE;
 
 void common_compiler_note(char *note_type, char *message) {
-	printf("%s: %s", note_type, message);
+	printf("%s: %s\n", note_type, message);
 }
 void error_compiler_note(char *message) {
 	common_compiler_note(ERROR_NOTE_TYPE, message);
@@ -54,7 +54,7 @@ void note_compiler_note(char *message) {
 	common_compiler_note(NOTE_NOTE_TYPE, message);
 }
 void common_location_compiler_note(struct Location *location, char *note_type, char *message) {
-	char *actual_note_type;
+	char *actual_note_type = calloc(sizeof(char), MAX_STRING_CAPACITY);
 	sprintf(actual_note_type, "%s:%d:%d: %s", location->filename, location->line, location->index, note_type);
 	common_compiler_note(actual_note_type, message);
 }
@@ -78,13 +78,18 @@ void handle_command_line_arguments(
 	}
 }
 void default_handle_start_function(int argc, char **argv) {
+	(void) argv;
 	if (argc < 2) {
 		error_compiler_note("no source files provided\n");
 		return;
 	}
 }
 void default_handle_iteration_function(int index, int argc, char **argv) {
-	printf("%d/%d: %s\n", index, argc, argv[index]);
+	(void) index;
+	note_location_compiler_note(&(struct Location){
+			.filename="main.c",
+			.line=-2,
+			.index=-2}, "Hahaha");
 }
 int main(int argc, char **argv) {
 	ERROR_NOTE_TYPE = calloc(sizeof(char), MAX_STRING_CAPACITY);

@@ -67,6 +67,20 @@ void warning_location_compiler_note(struct Location *location, char *message) {
 void note_location_compiler_note(struct Location *location, char *message) {
 	common_location_compiler_note(location, NOTE_NOTE_TYPE, message);
 }
+void common_primary_location_compiler_note(int location, char *note_type, char *message) {
+	char *actual_note_type = calloc(sizeof(char), MAX_STRING_CAPACITY);
+	sprintf(actual_note_type, "%d: %s", location, note_type);
+	common_compiler_note(actual_note_type, message);
+}
+void error_primary_location_compiler_note(int location, char *message) {
+	common_primary_location_compiler_note(location, ERROR_NOTE_TYPE, message);
+}
+void warning_primary_location_compiler_note(int location, char *message) {
+	common_primary_location_compiler_note(location, WARNING_NOTE_TYPE, message);
+}
+void note_primary_location_compiler_note(int location, char *message) {
+	common_primary_location_compiler_note(location, NOTE_NOTE_TYPE, message);
+}
 void handle_command_line_arguments(
 		int argc,
 		char **argv,
@@ -85,11 +99,12 @@ void default_handle_start_function(int argc, char **argv) {
 	}
 }
 void default_handle_iteration_function(int index, int argc, char **argv) {
-	(void) index;
+	(void) argc;
+	note_primary_location_compiler_note(index, argv[index]);
 	note_location_compiler_note(&(struct Location){
 			.filename="main.c",
 			.line=-2,
-			.index=-2}, "Hahaha");
+			.index=-2}, argv[index]);
 }
 int main(int argc, char **argv) {
 	ERROR_NOTE_TYPE = calloc(sizeof(char), MAX_STRING_CAPACITY);

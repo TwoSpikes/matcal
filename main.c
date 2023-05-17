@@ -41,7 +41,7 @@
 #define WHERE_I_AM fprintf(stderr, "i am here\n");
 
 /*................Section 0.3: Constants...................*/
-#define MAX_STRING_CAPACITY 1000
+#define MAX_STRING_CAPACITY 1e17
 
 #define ERROR_NOTE_TYPE RED_COLOR"error"RESET_COLOR
 #define WARNING_NOTE_TYPE YELLOW_COLOR"warning"RESET_COLOR
@@ -66,6 +66,10 @@ void note_compiler_note(char *message) {
 }
 void common_location_compiler_note(struct Location *location, char *note_type, char *message) {
 	char *actual_note_type = calloc(sizeof(char), MAX_STRING_CAPACITY);
+	if (!actual_note_type) {
+		fprintf(stderr, "cannot allocate memory\n");
+		abort();
+	}
 	sprintf(actual_note_type, "%s:%d:%d: %s", location->filename, location->line, location->index, note_type);
 	common_compiler_note(actual_note_type, message);
 }
@@ -81,14 +85,26 @@ void note_location_compiler_note(struct Location *location, char *message) {
 void common_primary_location_compiler_note(int location, char *note_type, char *message) {
 	{
 		char *old_note_type = calloc(sizeof(char), MAX_STRING_CAPACITY);
+		if (!old_note_type) {
+			fprintf(stderr, "cannot allocate memory\n");
+			abort();
+		}
 		strcpy(old_note_type, note_type);
 		note_type = calloc(sizeof(char), MAX_STRING_CAPACITY);
+		if (!note_type) {
+			fprintf(stderr, "cannot allocate memory\n");
+			abort();
+		}
 		sprintf(note_type, "%d: %s", location, old_note_type);
 	}
 	common_compiler_note(note_type, message);
 }
 void error_primary_location_compiler_note(int location, char *format, ...) {
 	char *message = calloc(sizeof(char), MAX_STRING_CAPACITY);
+	if (!message) {
+		fprintf(stderr, "cannot allocate memory\n");
+		abort();
+	}
 	{
 		va_list vp;
 		va_start(vp, format);
@@ -99,6 +115,10 @@ void error_primary_location_compiler_note(int location, char *format, ...) {
 }
 void warning_primary_location_compiler_note(int location, char *format, ...) {
 	char *message = calloc(sizeof(char), MAX_STRING_CAPACITY);
+	if (!message) {
+		fprintf(stderr, "cannot allocate memory\n");
+		abort();
+	}
 	{
 		va_list vp;
 		va_start(vp, format);
@@ -109,6 +129,10 @@ void warning_primary_location_compiler_note(int location, char *format, ...) {
 }
 void note_primary_location_compiler_note(int location, char *format, ...) {
 	char *message = calloc(sizeof(char), MAX_STRING_CAPACITY);
+	if (!message) {
+		fprintf(stderr, "cannot allocate memory\n");
+		abort();
+	}
 	{
 		va_list vp;
 		va_start(vp, format);

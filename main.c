@@ -38,6 +38,10 @@
 #define FILENAME_COLOR VIOLET_COLOR
 #define REASON_COLOR VIOLET_COLOR
 
+#define ERROR_NOTE_TYPE RED_COLOR"error"RESET_COLOR
+#define WARNING_NOTE_TYPE YELLOW_COLOR"warning"RESET_COLOR
+#define NOTE_NOTE_TYPE GREEN_COLOR"note"RESET_COLOR
+
 /*................Section 0.2: Debug things................*/
 #define WHERE_I_AM fprintf(stderr, "i am here\n");
 
@@ -45,15 +49,7 @@
 #define FILE_BLOCK_SIZE 100
 #define MAX_FILE_CAPACITY 100000
 
-#define ERROR_NOTE_TYPE RED_COLOR"error"RESET_COLOR
-#define WARNING_NOTE_TYPE YELLOW_COLOR"warning"RESET_COLOR
-#define NOTE_NOTE_TYPE GREEN_COLOR"note"RESET_COLOR
 /*................Section 0.4: Compiler note functions.....*/
-struct Location {
-	char *filename;
-	int line;
-	int index;
-};
 void common_compiler_note(char *note_type, char *message) {
 	printf("%s: %s\n", note_type, message);
 }
@@ -66,6 +62,11 @@ void warning_compiler_note(char *message) {
 void note_compiler_note(char *message) {
 	common_compiler_note(NOTE_NOTE_TYPE, message);
 }
+struct Location {
+	char *filename;
+	int line;
+	int index;
+};
 void common_location_compiler_note(struct Location *location, char *note_type, char *message) {
 	char *actual_note_type;
 	asprintf(&actual_note_type, "%s:%d:%d: %s", location->filename, location->line, location->index, note_type);

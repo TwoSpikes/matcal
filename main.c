@@ -121,9 +121,6 @@ struct Array *make_Array(void) {
 }
 #define ARRAY_APPEND(arr, elem, type)\
 do {\
-	if (!(arr)) {\
-		(arr) = malloc(sizeof(struct Array));\
-	}\
 	if (!((arr)->size % (arr)->capacity)) {\
 		(arr)->ptr = realloc((arr)->ptr, sizeof(type)*((arr)->size+(arr)->capacity));\
 	}\
@@ -179,7 +176,7 @@ void default_handle_iteration_function(int index, int argc, char **argv, struct 
 wchar_t *get(char *filename, size_t index) {
 	FILE *fp = fopen(filename, "r, ccs=UTF-8");
 	if (!fp) {
-		note_compiler_note("%d"GRAY_COLOR"cannot read "NON_BOLD_COLOR FILENAME_COLOR"%s"NON_BOLD_COLOR GRAY_COLOR" file due to this reason: "REASON_COLOR"%s"RESET_COLOR, index, filename, strerror(errno));
+		note_compiler_note("%d: "GRAY_COLOR"cannot read "NON_BOLD_COLOR FILENAME_COLOR"%s"NON_BOLD_COLOR GRAY_COLOR" file due to this reason: "REASON_COLOR"%s"RESET_COLOR, index, filename, strerror(errno));
 		abort();
 	}
 	wchar_t *all_file = calloc(sizeof(wchar_t), FILE_BLOCK_SIZE);
@@ -208,7 +205,11 @@ void handle_filename(size_t index, struct Array *filenames) {
 void default_handle_end_function(int argc, char **argv, struct Default_start_function_result *default_start_function_result) {
 	(void) argc;
 	(void) argv;
+	if (!default_start_function_result) {
+		return;
+	}
 	note_compiler_note("filenames are:");
+	printf("size is %zu\n", default_start_function_result->filenames->size);
 	for (size_t i = 0; i < default_start_function_result->filenames->size; i++) {
 		note_compiler_note("    %zu: %s", i, ((char**)default_start_function_result->filenames->ptr)[i]);
 	}

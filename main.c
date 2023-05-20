@@ -50,7 +50,7 @@
 
 /*................Section 0.3: Constants...................*/
 #define FILE_BLOCK_SIZE 100
-#define MAX_FILE_CAPACITY 100000
+#define MAX_FILE_SIZE 100000
 #define FILENAME_ARRAY_CAPACITY 10
 
 /*................Section 0.4: Compiler note functions.....*/
@@ -164,27 +164,19 @@ struct Default_start_function_result *default_handle_start_function(int argc, ch
 	(void) argv;
 	if (argc < 2) {
 		error_compiler_note(GRAY_COLOR"no source files provided"RESET_COLOR);
+		return NULL;
 	}
 	return make_Default_start_function_result();
 }
 void default_handle_iteration_function(int index, int argc, char **argv, struct Default_start_function_result *default_start_function_result) {
 	(void) argc;
-	WHERE
 	note_compiler_note(
 			"command line argument №%d: "GRAY_COLOR"adding "NON_BOLD_COLOR FILENAME_COLOR"%s"NON_BOLD_COLOR GRAY_COLOR" to source files..."RESET_COLOR,
 			index,
 			argv[index]);
 	ARRAY_APPEND(default_start_function_result->filenames, argv[index], char*);
 }
-void default_handle_end_function(int argc, char **argv, struct Default_start_function_result *default_start_function_result) {
-	(void) argc;
-	(void) argv;
-	note_compiler_note("filenames are:");
-	for (size_t i = 0; i < default_start_function_result->filenames->size; i++) {
-		note_compiler_note("    %zu: %s", i, ((char**)default_start_function_result->filenames->ptr)[i]);
-	}
-}
-wchar_t *get(char *filename, int index) {
+wchar_t *get(char *filename, size_t index) {
 	FILE *fp = fopen(filename, "r, ccs=UTF-8");
 	if (!fp) {
 		note_compiler_note("%d"GRAY_COLOR"cannot read "NON_BOLD_COLOR FILENAME_COLOR"%s"NON_BOLD_COLOR GRAY_COLOR" file due to this reason: "REASON_COLOR"%s"RESET_COLOR, index, filename, strerror(errno));
@@ -198,16 +190,31 @@ wchar_t *get(char *filename, int index) {
 		if (current_symbol == WEOF) {
 			break;
 		}
-		printf("just got: %lc\n", current_symbol);
 		if (!(i % FILE_BLOCK_SIZE)) {
-			fprintf(stderr, "reallocated: i=%d, FILE_BLOCK_SIZE=%d\n", i, FILE_BLOCK_SIZE);
 			all_file = realloc(all_file, sizeof(wchar_t)*((unsigned long)i + FILE_BLOCK_SIZE));
 		}
 		all_file[i] =  (wchar_t)current_symbol;
 	}
-	printf("all file: %ls\n", all_file);
 	fclose(fp);
 	return all_file;
+}
+void handle_filename(size_t index, struct Array *filenames) {
+	char *filename = ((char**)filenames->ptr)[index];
+	note_compiler_note("%zu. reading %s...", index, filename);
+	wchar_t *content = malloc(sizeof(wchar_t)*MAX_FILE_SIZE);
+	wcscpy(content, get(filename, index));
+	note_compiler_note("file is %ls", content);
+}
+void default_handle_end_function(int argc, char **argv, struct Default_start_function_result *default_start_function_result) {
+	(void) argc;
+	(void) argv;
+	note_compiler_note("filenames are:");
+	for (size_t i = 0; i < default_start_function_result->filenames->size; i++) {
+		note_compiler_note("    %zu: %s", i, ((char**)default_start_function_result->filenames->ptr)[i]);
+	}
+	for (size_t i = 0; i < default_start_function_result->filenames->size; i++) {
+		handle_filename(i, default_start_function_result->filenames);
+	}
 }
 int main(int argc, char **argv) {
 	handle_command_line_arguments(

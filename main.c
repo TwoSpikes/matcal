@@ -1,6 +1,9 @@
 #if 0
-	./run.sh ${@}
-	exit $?
+	./build.sh;
+	if [[ $? -ge 0 ]]; then
+		./a.out $@;
+	fi;
+	exit $?;
 #endif
 
 #include <stdio.h>
@@ -43,23 +46,42 @@
 #define NOTE_NOTE_TYPE GREEN_COLOR"note"RESET_COLOR
 
 /*................Section 0.2: Debug things................*/
-#define WHERE_I_AM fprintf(stderr, "i am here\n");
+#define WHERE fprintf(stderr, "i am here\n");
 
 /*................Section 0.3: Constants...................*/
 #define FILE_BLOCK_SIZE 100
 #define MAX_FILE_CAPACITY 100000
+#define FILENAME_ARRAY_CAPACITY 10
 
 /*................Section 0.4: Compiler note functions.....*/
 void common_compiler_note(char *note_type, char *message) {
 	printf("%s: %s\n", note_type, message);
 }
-void error_compiler_note(char *message) {
+void error_compiler_note(char *format, ...) {
+	char *message;
+	{
+		va_list vp;
+		va_start(vp, format);
+		asprintf(&message, format, vp);
+	}
 	common_compiler_note(ERROR_NOTE_TYPE, message);
 }
-void warning_compiler_note(char *message) {
+void warning_compiler_note(char *format, ...) {
+	char *message;
+	{
+		va_list vp;
+		va_start(vp, format);
+		asprintf(&message, format, vp);
+	}
 	common_compiler_note(WARNING_NOTE_TYPE, message);
 }
-void note_compiler_note(char *message) {
+void note_compiler_note(char *format, ...) {
+	char *message;
+	{
+		va_list vp;
+		va_start(vp, format);
+		vasprintf(&message, format, vp);
+	}
 	common_compiler_note(NOTE_NOTE_TYPE, message);
 }
 struct Location {
@@ -81,71 +103,91 @@ void warning_location_compiler_note(struct Location *location, char *message) {
 void note_location_compiler_note(struct Location *location, char *message) {
 	common_location_compiler_note(location, NOTE_NOTE_TYPE, message);
 }
-void common_primary_location_compiler_note(int location, char *note_type, char *message) {
-	{
-		char *old_note_type = calloc(sizeof(char), strlen(note_type));
-		strcpy(old_note_type, note_type);
-		asprintf(&note_type, "%d: %s", location, old_note_type);
-	}
-	common_compiler_note(note_type, message);
-}
-void error_primary_location_compiler_note(int location, char *format, ...) {
-	char *message;
-	{
-		va_list vp;
-		va_start(vp, format);
-		vasprintf(&message, format, vp);
-		va_end(vp);
-	}
-	common_primary_location_compiler_note(location, ERROR_NOTE_TYPE, message);
-}
-void warning_primary_location_compiler_note(int location, char *format, ...) {
-	char *message;
-	{
-		va_list vp;
-		va_start(vp, format);
-		vasprintf(&message, format, vp);
-		va_end(vp);
-	}
-	common_primary_location_compiler_note(location, WARNING_NOTE_TYPE, message);
-}
-void note_primary_location_compiler_note(int location, char *format, ...) {
-	char *message;
-	{
-		va_list vp;
-		va_start(vp, format);
-		vasprintf(&message, format, vp);
-		va_end(vp);
-	}
-	common_primary_location_compiler_note(location, NOTE_NOTE_TYPE, message);
-}
 /************************************************************
  *                Section 1: Command line arguments
  ***********************************************************/
 /*................Section 1.0: Subcommand and sources......*/
+struct Array {
+	size_t size;
+	size_t capacity;
+	void *ptr;
+};
+struct Array *make_Array(void) {
+	struct Array *object;
+	object = malloc(sizeof(struct Array));
+	object->size = 0;
+	object->capacity = FILENAME_ARRAY_CAPACITY;
+	return object;
+}
+#define ARRAY_APPEND(arr, elem, type)\
+do {\
+	if (!(arr)) {\
+		(arr) = malloc(sizeof(struct Array));\
+	}\
+	if (!((arr)->size % (arr)->capacity)) {\
+		(arr)->ptr = realloc((arr)->ptr, sizeof(type)*((arr)->size+(arr)->capacity));\
+	}\
+	((type*)(arr)->ptr)[(arr)->size++] = (elem);\
+} while (0)
 void handle_command_line_arguments(
 		int argc,
 		char **argv,
-		void(*handle_start_function)(int, char **),
-		void(*handle_iteration_function)(int, int, char **)) {
-	handle_start_function(argc, argv);
+		void *(*handle_start_function)(int, char **),
+		void(*handle_iteration_function)(int, int, char **, void *),
+		void(*handle_end_function)(int, char **, void*)) {
+	void *handle_start_function_result = handle_start_function(argc, argv);
 	for (int index = 1; index < argc; index++) {
-		handle_iteration_function(index, argc, argv);
+		handle_iteration_function(index, argc, argv, handle_start_function_result);
 	}
+	handle_end_function(argc, argv, handle_start_function_result);
 }
-void default_handle_start_function(int argc, char **argv) {
+struct Options {
+	
+};
+struct Options *make_Options(void) {
+	struct Options *object;
+	object = malloc(sizeof(struct Options));
+	return object;
+}
+struct Default_start_function_result {
+	struct Options *options;
+	struct Array *filenames;
+};
+struct Default_start_function_result *make_Default_start_function_result(void) {
+	struct Default_start_function_result *object;
+	object = malloc(sizeof(struct Default_start_function_result));
+	object->options = make_Options();
+	object->filenames = make_Array();
+	return object;
+}
+struct Default_start_function_result *default_handle_start_function(int argc, char **argv) {
 	(void) argv;
 	if (argc < 2) {
 		error_compiler_note(GRAY_COLOR"no source files provided"RESET_COLOR);
-		return;
+	}
+	return make_Default_start_function_result();
+}
+void default_handle_iteration_function(int index, int argc, char **argv, struct Default_start_function_result *default_start_function_result) {
+	(void) argc;
+	WHERE
+	note_compiler_note(
+			"command line argument №%d: "GRAY_COLOR"adding "NON_BOLD_COLOR FILENAME_COLOR"%s"NON_BOLD_COLOR GRAY_COLOR" to source files..."RESET_COLOR,
+			index,
+			argv[index]);
+	ARRAY_APPEND(default_start_function_result->filenames, argv[index], char*);
+}
+void default_handle_end_function(int argc, char **argv, struct Default_start_function_result *default_start_function_result) {
+	(void) argc;
+	(void) argv;
+	note_compiler_note("filenames are:");
+	for (size_t i = 0; i < default_start_function_result->filenames->size; i++) {
+		note_compiler_note("    %zu: %s", i, ((char**)default_start_function_result->filenames->ptr)[i]);
 	}
 }
-void default_handle_iteration_function(int index, int argc, char **argv) {
-	(void) argc;
-	note_primary_location_compiler_note(index, GRAY_COLOR"adding "NON_BOLD_COLOR FILENAME_COLOR"%s"NON_BOLD_COLOR GRAY_COLOR" to source files..."RESET_COLOR, argv[index]);
-	FILE *fp = fopen(argv[index], "r, ccs=UTF-8");
+wchar_t *get(char *filename, int index) {
+	FILE *fp = fopen(filename, "r, ccs=UTF-8");
 	if (!fp) {
-		note_primary_location_compiler_note(index, GRAY_COLOR"cannot read "NON_BOLD_COLOR FILENAME_COLOR"%s"NON_BOLD_COLOR GRAY_COLOR" file due to this reason: "REASON_COLOR"%s"RESET_COLOR, argv[index], strerror(errno));
+		note_compiler_note("%d"GRAY_COLOR"cannot read "NON_BOLD_COLOR FILENAME_COLOR"%s"NON_BOLD_COLOR GRAY_COLOR" file due to this reason: "REASON_COLOR"%s"RESET_COLOR, index, filename, strerror(errno));
 		abort();
 	}
 	wchar_t *all_file = calloc(sizeof(wchar_t), FILE_BLOCK_SIZE);
@@ -165,12 +207,14 @@ void default_handle_iteration_function(int index, int argc, char **argv) {
 	}
 	printf("all file: %ls\n", all_file);
 	fclose(fp);
+	return all_file;
 }
 int main(int argc, char **argv) {
 	handle_command_line_arguments(
 			argc,
 			argv,
-			default_handle_start_function,
-			default_handle_iteration_function);
+			(void *(*)(int, char **))default_handle_start_function,
+			(void(*)(int, int, char **, void*))default_handle_iteration_function,
+			(void(*)(int, char **, void *))default_handle_end_function);
 	return 0;
 }

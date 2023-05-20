@@ -5,10 +5,11 @@ Dependences:
 
 # Quick install
 ```console
-$ cc main.c
+$ ./build.sh
 $ ./a.out
 ```
 Or
 ```console
-$ ./run.sh
+$ cc -O2 main.c
+$ ./a.out
 ```

@@ -1,4 +1,4 @@
-mathematical calculator in C
+mathematical calculator in C++
 
 Dependences:
 - C compiler

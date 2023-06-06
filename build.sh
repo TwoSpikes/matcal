@@ -2,7 +2,7 @@
 
 C_COMPILER='clang++'
 ERROR_LIMIT=5000
-C_FLAGS="-Wall -Wextra -Wconversion --std=c++2b -O3 -g -ferror-limit=${ERROR_LIMIT}"
+C_FLAGS="-Wall -Wextra -Wconversion -Wimplicit-fallthrough --std=c++2b -O3 -g -ferror-limit=${ERROR_LIMIT}"
 
 ${C_COMPILER} ./main.cpp ${C_FLAGS}
 errorcode=$?
